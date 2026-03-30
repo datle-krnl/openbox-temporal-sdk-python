@@ -16,6 +16,8 @@ concurrency:
 env:
   PYTHON_VERSION: "3.11"
   COVERAGE_THRESHOLD: "80"
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
 jobs:
   release-governance:
@@ -141,14 +143,14 @@ jobs:
         run: python -m build
 
       - name: Set up Java
-        if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Cache SonarQube packages
-        if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
@@ -156,12 +158,12 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar
 
       - name: SonarQube scan
-        if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: SonarSource/sonarqube-scan-action@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
 
   release-security:
     name: Release Security
@@ -180,7 +182,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           scan-type: fs
           scan-ref: .
@@ -260,7 +262,7 @@ jobs:
 
       - name: Run Trivy image scan
         if: steps.dockerfile.outputs.found == 'true'
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           scan-type: image
           image-ref: ${{ env.LOCAL_IMAGE_TAG }}
@@ -281,7 +283,7 @@ jobs:
 
       - name: Generate image SBOM
         if: always() && steps.dockerfile.outputs.found == 'true'
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           scan-type: image
           image-ref: ${{ env.LOCAL_IMAGE_TAG }}

@@ -23,6 +23,9 @@ concurrency:
 env:
   PYTHON_VERSION: "3.11"
   COVERAGE_THRESHOLD: "80"
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
 jobs:
   lint:
@@ -89,7 +92,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload coverage to Codecov
-        if: ${{ secrets.CODECOV_TOKEN != '' }}
+        if: ${{ env.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
@@ -97,7 +100,7 @@ jobs:
           name: pr-quality
           fail_ci_if_error: true
           verbose: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
 
   build:
     name: Build
@@ -133,27 +136,34 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - test
-    if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' }}
 
     steps:
+      - name: Skip when SonarQube secrets are not configured
+        if: ${{ env.SONAR_TOKEN == '' || env.SONAR_HOST_URL == '' }}
+        run: echo "Skipping SonarQube because SONAR_TOKEN or SONAR_HOST_URL is not configured."
+
       - name: Checkout repository
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Download coverage report
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: actions/download-artifact@v4
         with:
           name: coverage-xml
           path: .
 
       - name: Set up Java
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Cache SonarQube packages
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
@@ -161,8 +171,9 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar
 
       - name: SonarQube scan
+        if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: SonarSource/sonarqube-scan-action@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}

@@ -57,7 +57,7 @@ jobs:
 
       - name: Run Trivy image scan
         if: steps.dockerfile.outputs.found == 'true'
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           scan-type: image
           image-ref: ${{ env.IMAGE_REF }}
@@ -78,7 +78,7 @@ jobs:
 
       - name: Generate image SBOM
         if: always() && steps.dockerfile.outputs.found == 'true'
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           scan-type: image
           image-ref: ${{ env.IMAGE_REF }}

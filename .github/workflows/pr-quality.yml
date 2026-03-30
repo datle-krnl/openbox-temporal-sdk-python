@@ -154,7 +154,7 @@ jobs:
         with:
           name: coverage-xml
           path: .
-
+ 
       - name: Set up Java
         if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
         uses: actions/setup-java@v4
